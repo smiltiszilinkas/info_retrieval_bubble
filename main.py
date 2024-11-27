@@ -11,6 +11,7 @@ import os
 
 excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com" ]
 nr_of_links_clikable = 4
+save_top_x_links = 5
 
 def get_queries(name):
     """Load the queries from queries.json."""
@@ -54,7 +55,8 @@ def search_queries(driver, queries):
         for index, query in enumerate(queries):
             driver.get("https://www.google.com/?hl=en&gl=us")
             search_field = driver.find_element(By.TAG_NAME, "textarea")
-            print(str(index)+" ", query)
+            # to see which query is being queried on the terminal
+            print("Querying: ", query)
             search_field.click()
             search_field.clear()  # Clear any previous text
             search_field.send_keys(query)
@@ -73,8 +75,7 @@ def search_queries(driver, queries):
                         link = a_tag.get_attribute("href")
                         text = a_tag.text
                         if not any(domain in link for domain in excluded_domains): 
-                            print("Found <a> tag with href:", link)
-                            print("Text inside <a> tag:", text)
+                            # append link, with possible name
                             links.append({"link": link, "name": text})
                 else:
                     print("No <a> tags found inside this div.")
@@ -97,14 +98,20 @@ def locate_query_divs(driver):
         WebElement or None
     """
     try:
-        # Use XPath to find the span with exact text 'Top stories'
-        top_stories_span = driver.find_element(By.XPATH, "//span[text()='Top stories']")
-        # Navigate up 8 ancestor divs
-        parent = top_stories_span.find_element(By.XPATH, "./ancestor::div[8]")
-        # Find all divs of search query, first one represents 'Top stories'
-        divs = parent.find_elements(By.XPATH, "./div")
+        # Find the parent div with id="search"
+        search_div = driver.find_element(By.ID, "search")
+        # Get the first child of the parent div
+        first_child_div = search_div.find_element(By.XPATH, "./div")  # Using XPath to get the first child
+        # Get the first child of the child div
+        first_child_div_of_child_div = first_child_div.find_element(By.XPATH, "./div")
+        # Find all child divs while excluding specific ones by their aria-label or other unique identifiers
+        excluded_labels = ["Top stories", "Dictionary"]
+        xpath_condition = " or ".join([f"not(contains(@aria-label, '{label}'))" for label in excluded_labels])
 
-        return divs[1:]
+        # XPath to find divs that do not match excluded conditions
+        search_query_divs = first_child_div_of_child_div.find_elements(By.XPATH, f"./div[div[{xpath_condition}]]")
+
+        return search_query_divs
 
     except NoSuchElementException:
         print("Divs for this query have not been found.")
@@ -167,7 +174,7 @@ def search_query_save_results(driver, neutral_queries):
                         text = a_tag.text
                         if not any(domain in link for domain in excluded_domains):
                             links.append({"link": link, "name": text})
-            array.append(links)
+            array.append({"query": query, "links": links[:save_top_x_links]})
 
         # save neutral links to json, only single for now
         save_links_to_json(array)
@@ -187,9 +194,6 @@ def clickLink(driver, link):
         current_url = driver.current_url
         # Open the link
         driver.get(link['link'])
-        
-        # Optionally print the link that is being clicked
-        print(f"Clicking link: {link['name']} ({link['link']})")
         
         # Wait for 10 seconds
         time.sleep(10)
