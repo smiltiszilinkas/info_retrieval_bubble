@@ -1,3 +1,4 @@
 {
-  "queries": ["Trump", "Biden"]
+  "queries": ["Trump", "Biden"],
+  "neutral_queries": ["right wing", "left wing"]
 }
