@@ -220,10 +220,28 @@ def clickLink(driver, link):
     except Exception as e:
         print(f"Error occurred while handling link {link['link']}: {e}")
 
+def save_order_to_json(orderlist):
+    """
+    Saves links in the json
+    """
+     
+    # Directory to save the JSON files
+    output_dir = "queries_order_jsons"
+    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+
+    output_file = os.path.join(output_dir, f"orderlist.json")
+
+    # Save the links to the unique JSON file
+    print(orderlist)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(" ".join(list(map(str,orderlist))), f, ensure_ascii=False, indent=4)
+
 def main():
-    queries_temp_right = get_queries('queries_right_wing_1')
+    queries_temp_right = get_queries('queries_right_wing')
     order = np.arange(len(queries_temp_right))
     random.shuffle(order)
+    print(order)
+    save_order_to_json(order)
     queries = []
     for i in order:
         queries.append(queries_temp_right[i])
