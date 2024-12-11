@@ -12,7 +12,7 @@ import os
 from urllib.parse import urlparse
 
 
-excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com" ]
+excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com", "google.com" ]
 nr_of_links_clikable = 5
 save_top_x_links = 10
 
@@ -126,13 +126,11 @@ def locate_query_divs(driver):
         print("Divs for this query have not been found.")
         return None
 
-def save_links_to_json(links):
+def save_links_to_json(links, output_dir):
     """
     Saves links in the json
     """
-     
-    # Directory to save the JSON files
-    output_dir = "neutral_queries_jsons"
+         
     os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
 
     # filename
@@ -156,7 +154,7 @@ def save_links_to_json(links):
 
     print(f"Saved {len(links)} links to {output_file}")
 
-def search_query_save_results(driver, neutral_queries):
+def search_query_save_results(driver, neutral_queries, output_dir):
     """Search each query in the Google search field. And save links to json."""
     # array to store links
     array = []
@@ -190,7 +188,57 @@ def search_query_save_results(driver, neutral_queries):
             array.append({"query": query, "links": links[:save_top_x_links]})
 
         # save neutral links to json, only single for now
-        save_links_to_json(array)
+        save_links_to_json(array, output_dir)
+            
+
+    except NoSuchElementException:
+        print("Search field not found.")
+    except ElementNotInteractableException:
+        print("Search field is not interactable.")
+
+def search_query_news_save_results(driver, neutral_queries, output_dir):
+    """Search each query in the Google search field. And save links to json."""
+    # array to store links
+    array = []
+    try:        
+        for index, query in enumerate(neutral_queries):
+            driver.get("https://www.google.com/?hl=en&gl=us")
+            search_field = driver.find_element(By.TAG_NAME, "textarea")
+            search_field.click()
+            search_field.clear()  # Clear any previous text
+            search_field.send_keys(query)
+            search_field.send_keys(Keys.ENTER)
+            # Get news element
+            time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
+            main_element = driver.find_element(By.ID, "main")
+            # Get last div
+            last_div = main_element.find_element(By.XPATH, "./div/div/div/div/div/div")
+            hyperlinks = last_div.find_elements(By.TAG_NAME, 'a')
+            # News element click
+            hyperlinks[1].click()
+            time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
+            search_query_divs = locate_query_divs(driver)
+            links = []
+            seen_domains = set()
+            # Iterate through each div and look for the <a> tag inside it
+            for div in search_query_divs:
+                # Find all <a> tags inside the current <div>
+                a_tags = div.find_elements(By.TAG_NAME, "a")
+
+                # Check if any <a> tags were found
+                if a_tags:
+                    for a_tag in a_tags:
+                        link = a_tag.get_attribute("href")
+                        parsed_url = urlparse(link)
+                        root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
+                        text = a_tag.text
+                        if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
+                            links.append({"link": link, "name": text})
+                            seen_domains.add(root_domain)  # Mark this domain as seen
+            array.append({"query": query, "links": links[:save_top_x_links]})
+
+        # save neutral links to json, only single for now
+        save_links_to_json(array, output_dir)
             
 
     except NoSuchElementException:
@@ -257,7 +305,7 @@ def main():
     #get neutral queries and save to the json
     neutral_queries = get_queries('neutral_queries')
     print(type(neutral_queries), neutral_queries)
-    search_query_save_results(driver, neutral_queries)
+    search_query_news_save_results(driver, neutral_queries, 'neutral_queries_news_jsons')
 
     queries_temp_left = get_queries('queries_left_wing_1')
     order = np.arange(len(queries_temp_left))
@@ -278,7 +326,7 @@ def main():
     neutral_queries = get_queries('neutral_queries')
     print(type(neutral_queries), neutral_queries)
     print(neutral_queries[0])
-    search_query_save_results(driver, neutral_queries)
+    search_query_save_results(driver, neutral_queries, 'neutral_queries_jsons')
 
     # Close the browser
     driver.quit()
