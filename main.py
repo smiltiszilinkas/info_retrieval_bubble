@@ -75,7 +75,7 @@ def search_queries(driver, queries):
                     for a_tag in a_tags:
                         link = a_tag.get_attribute("href")
                         text = a_tag.text
-                        if not any(domain in link for domain in excluded_domains): 
+                        if link and not any(domain in link for domain in excluded_domains): 
                             # append link, with possible name
                             links.append({"link": link, "name": text})
                 else:
@@ -160,7 +160,7 @@ def search_query_save_results(driver, neutral_queries):
             search_field.clear()  # Clear any previous text
             search_field.send_keys(query)
             search_field.send_keys(Keys.ENTER)
-            time.sleep(random.uniform(1, 5))  # Wait randomly for not getting banned for crawling
+            time.sleep(random.uniform(10, 11))  # Wait randomly for not getting banned for crawling
             search_query_divs = locate_query_divs(driver)
             links = []
             # Iterate through each div and look for the <a> tag inside it
