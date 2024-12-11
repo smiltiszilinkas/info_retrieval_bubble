@@ -9,6 +9,8 @@ import numpy as np
 import json
 import random
 import os
+from urllib.parse import urlparse
+
 
 excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com" ]
 nr_of_links_clikable = 5
@@ -65,6 +67,7 @@ def search_queries(driver, queries):
             time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
             search_query_divs = locate_query_divs(driver)
             links = []
+            seen_domains = set()
             # Iterate through each div and look for the <a> tag inside it
             for div in search_query_divs:
                 # Find all <a> tags inside the current <div>
@@ -74,10 +77,15 @@ def search_queries(driver, queries):
                 if a_tags:
                     for a_tag in a_tags:
                         link = a_tag.get_attribute("href")
+                        parsed_url = urlparse(link)
+                        root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
                         text = a_tag.text
-                        if link and not any(domain in link for domain in excluded_domains): 
+                        # link initialized and root domain is checked to not go to the same root link
+                        if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains): 
                             # append link, with possible name
                             links.append({"link": link, "name": text})
+                            seen_domains.add(root_domain)  # Mark this domain as seen
+
                 else:
                     print("No <a> tags found inside this div.")
             links_clicked = 0      
@@ -163,6 +171,7 @@ def search_query_save_results(driver, neutral_queries):
             time.sleep(random.uniform(10, 11))  # Wait randomly for not getting banned for crawling
             search_query_divs = locate_query_divs(driver)
             links = []
+            seen_domains = set()
             # Iterate through each div and look for the <a> tag inside it
             for div in search_query_divs:
                 # Find all <a> tags inside the current <div>
@@ -172,9 +181,12 @@ def search_query_save_results(driver, neutral_queries):
                 if a_tags:
                     for a_tag in a_tags:
                         link = a_tag.get_attribute("href")
+                        parsed_url = urlparse(link)
+                        root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
                         text = a_tag.text
-                        if link and not any(domain in link for domain in excluded_domains):
+                        if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
                             links.append({"link": link, "name": text})
+                            seen_domains.add(root_domain)  # Mark this domain as seen
             array.append({"query": query, "links": links[:save_top_x_links]})
 
         # save neutral links to json, only single for now
