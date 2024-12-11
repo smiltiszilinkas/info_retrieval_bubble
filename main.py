@@ -110,7 +110,7 @@ def locate_query_divs(driver):
         xpath_condition = " or ".join([f"not(contains(@aria-label, '{label}'))" for label in excluded_labels])
 
         # XPath to find divs that do not match excluded conditions
-        search_query_divs = first_child_div_of_child_div.find_elements(By.XPATH, f"./div[{xpath_condition}]")
+        search_query_divs = first_child_div_of_child_div.find_elements(By.XPATH, f"./div[div[{xpath_condition}]]")
 
         return search_query_divs
 
@@ -173,7 +173,7 @@ def search_query_save_results(driver, neutral_queries):
                     for a_tag in a_tags:
                         link = a_tag.get_attribute("href")
                         text = a_tag.text
-                        if not any(domain in link for domain in excluded_domains):
+                        if link and not any(domain in link for domain in excluded_domains):
                             links.append({"link": link, "name": text})
             array.append({"query": query, "links": links[:save_top_x_links]})
 
