@@ -5,13 +5,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+import numpy as np
 import json
 import random
 import os
 
 excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com" ]
-nr_of_links_clikable = 4
-save_top_x_links = 5
+nr_of_links_clikable = 5
+save_top_x_links = 10
 
 def get_queries(name):
     """Load the queries from queries.json."""
@@ -109,7 +110,7 @@ def locate_query_divs(driver):
         xpath_condition = " or ".join([f"not(contains(@aria-label, '{label}'))" for label in excluded_labels])
 
         # XPath to find divs that do not match excluded conditions
-        search_query_divs = first_child_div_of_child_div.find_elements(By.XPATH, f"./div[div[{xpath_condition}]]")
+        search_query_divs = first_child_div_of_child_div.find_elements(By.XPATH, f"./div[{xpath_condition}]")
 
         return search_query_divs
 
@@ -159,7 +160,7 @@ def search_query_save_results(driver, neutral_queries):
             search_field.clear()  # Clear any previous text
             search_field.send_keys(query)
             search_field.send_keys(Keys.ENTER)
-            time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
+            time.sleep(random.uniform(1, 5))  # Wait randomly for not getting banned for crawling
             search_query_divs = locate_query_divs(driver)
             links = []
             # Iterate through each div and look for the <a> tag inside it
@@ -196,7 +197,7 @@ def clickLink(driver, link):
         driver.get(link['link'])
         
         # Wait for 10 seconds
-        time.sleep(10)
+        time.sleep(random.uniform(3, 10))
         
         # Navigate back to the previous search page
         driver.get(current_url)
@@ -208,8 +209,12 @@ def clickLink(driver, link):
         print(f"Error occurred while handling link {link['link']}: {e}")
 
 def main():
-    queries = get_queries('queries')
-    
+    queries_temp_right = get_queries('queries_right_wing_1')
+    order = np.arange(len(queries_temp_right))
+    random.shuffle(order)
+    queries = []
+    for i in order:
+        queries.append(queries_temp_right[i])
     driver = initialize_driver()
     
     # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
@@ -221,6 +226,28 @@ def main():
     
     #get neutral queries and save to the json
     neutral_queries = get_queries('neutral_queries')
+    print(type(neutral_queries), neutral_queries)
+    search_query_save_results(driver, neutral_queries)
+
+    queries_temp_left = get_queries('queries_left_wing_1')
+    order = np.arange(len(queries_temp_left))
+    random.shuffle(order)
+    queries = []
+    for i in order:
+        queries.append(queries_temp_left[i])
+    driver = initialize_driver()
+    
+    # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
+    driver.get("https://www.google.com/?hl=en&gl=us")
+    accept_cookies(driver)
+    
+    # Perform searches for each query
+    search_queries(driver, queries)
+    
+    #get neutral queries and save to the json
+    neutral_queries = get_queries('neutral_queries')
+    print(type(neutral_queries), neutral_queries)
+    print(neutral_queries[0])
     search_query_save_results(driver, neutral_queries)
 
     # Close the browser
