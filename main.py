@@ -284,6 +284,21 @@ def save_order_to_json(orderlist):
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(" ".join(list(map(str,orderlist))), f, ensure_ascii=False, indent=4)
 
+def get_order_to_json():
+    """
+    Saves links in the json
+    """
+     
+    # Directory to save the JSON files
+    input_dir = "queries_order_jsons"
+    input_file = os.path.join(input_dir, f"orderlist.json")
+
+    # Save the links to the unique JSON file
+    with open('queries.json', 'r') as file:
+            data = json.load(file)
+            slices = data.split(" ")
+            return list(map(int,slices))
+
 def main():
     queries_temp_right = get_queries('queries_right_wing')
     order = np.arange(len(queries_temp_right))
