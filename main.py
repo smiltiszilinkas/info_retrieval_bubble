@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 excluded_domains = ['wikipedia', 'instagram.com', 'facebook.com', "x.com", "twitter.com", "google.com" ]
 nr_of_links_clikable = 5
-save_top_x_links = 10
+save_top_x_links = 5
 
 def get_queries(name):
     """Load the queries from queries.json."""
@@ -126,7 +126,7 @@ def locate_query_divs(driver):
         print("Divs for this query have not been found.")
         return None
 
-def save_links_to_json(links, output_dir):
+def save_links_to_json(links, nr_of_participant, nr_of_neutr_query, nr_of_third, output_dir):
     """
     Saves links in the json
     """
@@ -136,17 +136,9 @@ def save_links_to_json(links, output_dir):
     # filename
     base_filename = "links"
     extension = ".json"
-    counter = 0
 
     # Find filename, if doesn't exist create one
-    while True:
-        if counter == 0:
-            output_file = os.path.join(output_dir, f"{base_filename}{extension}")
-        else:
-            output_file = os.path.join(output_dir, f"{base_filename}{counter}{extension}")
-        if not os.path.exists(output_file):
-            break
-        counter += 1
+    output_file = os.path.join(output_dir, f"{base_filename}_p{nr_of_participant}_q{nr_of_neutr_query}_t{nr_of_third}{extension}")
 
     # Save the links to the unique JSON file
     with open(output_file, "w", encoding="utf-8") as f:
@@ -154,41 +146,40 @@ def save_links_to_json(links, output_dir):
 
     print(f"Saved {len(links)} links to {output_file}")
 
-def search_query_save_results(driver, neutral_queries, output_dir):
+def search_query_save_results(driver, neutral_query, nr_of_participant, nr_of_neutr_query, nr_of_third, output_dir):
     """Search each query in the Google search field. And save links to json."""
     # array to store links
     array = []
     try:        
-        for index, query in enumerate(neutral_queries):
-            driver.get("https://www.google.com/?hl=en&gl=us")
-            search_field = driver.find_element(By.TAG_NAME, "textarea")
-            search_field.click()
-            search_field.clear()  # Clear any previous text
-            search_field.send_keys(query)
-            search_field.send_keys(Keys.ENTER)
-            time.sleep(random.uniform(10, 11))  # Wait randomly for not getting banned for crawling
-            search_query_divs = locate_query_divs(driver)
-            links = []
-            seen_domains = set()
-            # Iterate through each div and look for the <a> tag inside it
-            for div in search_query_divs:
-                # Find all <a> tags inside the current <div>
-                a_tags = div.find_elements(By.TAG_NAME, "a")
+        driver.get("https://www.google.com/?hl=en&gl=us")
+        search_field = driver.find_element(By.TAG_NAME, "textarea")
+        search_field.click()
+        search_field.clear()  # Clear any previous text
+        search_field.send_keys(neutral_query)
+        search_field.send_keys(Keys.ENTER)
+        time.sleep(random.uniform(10, 11))  # Wait randomly for not getting banned for crawling
+        search_query_divs = locate_query_divs(driver)
+        links = []
+        seen_domains = set()
+        # Iterate through each div and look for the <a> tag inside it
+        for div in search_query_divs:
+            # Find all <a> tags inside the current <div>
+            a_tags = div.find_elements(By.TAG_NAME, "a")
 
-                # Check if any <a> tags were found
-                if a_tags:
-                    for a_tag in a_tags:
-                        link = a_tag.get_attribute("href")
-                        parsed_url = urlparse(link)
-                        root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
-                        text = a_tag.text
-                        if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
-                            links.append({"link": link, "name": text})
-                            seen_domains.add(root_domain)  # Mark this domain as seen
-            array.append({"query": query, "links": links[:save_top_x_links]})
+            # Check if any <a> tags were found
+            if a_tags:
+                for a_tag in a_tags:
+                    link = a_tag.get_attribute("href")
+                    parsed_url = urlparse(link)
+                    root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
+                    text = a_tag.text
+                    if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
+                        links.append({"link": link, "name": text})
+                        seen_domains.add(root_domain)  # Mark this domain as seen
+        array.append({"query": neutral_query, "links": links[:save_top_x_links]})
 
         # save neutral links to json, only single for now
-        save_links_to_json(array, output_dir)
+        save_links_to_json(array, nr_of_participant, nr_of_neutr_query, nr_of_third, output_dir)
             
 
     except NoSuchElementException:
@@ -196,49 +187,48 @@ def search_query_save_results(driver, neutral_queries, output_dir):
     except ElementNotInteractableException:
         print("Search field is not interactable.")
 
-def search_query_news_save_results(driver, neutral_queries, output_dir):
+def search_query_news_save_results(driver, neutral_query, nr_of_participant, nr_of_neutr_query, nr_of_third, output_dir):
     """Search each query in the Google search field. And save links to json."""
     # array to store links
     array = []
     try:        
-        for index, query in enumerate(neutral_queries):
-            driver.get("https://www.google.com/?hl=en&gl=us")
-            search_field = driver.find_element(By.TAG_NAME, "textarea")
-            search_field.click()
-            search_field.clear()  # Clear any previous text
-            search_field.send_keys(query)
-            search_field.send_keys(Keys.ENTER)
-            # Get news element
-            time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
-            main_element = driver.find_element(By.ID, "main")
-            # Get last div
-            last_div = main_element.find_element(By.XPATH, "./div/div/div/div/div/div")
-            hyperlinks = last_div.find_elements(By.TAG_NAME, 'a')
-            # News element click
-            hyperlinks[1].click()
-            time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
-            search_query_divs = locate_query_divs(driver)
-            links = []
-            seen_domains = set()
-            # Iterate through each div and look for the <a> tag inside it
-            for div in search_query_divs:
-                # Find all <a> tags inside the current <div>
-                a_tags = div.find_elements(By.TAG_NAME, "a")
+        driver.get("https://www.google.com/?hl=en&gl=us")
+        search_field = driver.find_element(By.TAG_NAME, "textarea")
+        search_field.click()
+        search_field.clear()  # Clear any previous text
+        search_field.send_keys(neutral_query)
+        search_field.send_keys(Keys.ENTER)
+        # Get news element
+        time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
+        main_element = driver.find_element(By.ID, "main")
+        # Get last div
+        last_div = main_element.find_element(By.XPATH, "./div/div/div/div/div/div")
+        hyperlinks = last_div.find_elements(By.TAG_NAME, 'a')
+        # News element click
+        hyperlinks[1].click()
+        time.sleep(random.uniform(5, 10))  # Wait randomly for not getting banned for crawling
+        search_query_divs = locate_query_divs(driver)
+        links = []
+        seen_domains = set()
+        # Iterate through each div and look for the <a> tag inside it
+        for div in search_query_divs:
+            # Find all <a> tags inside the current <div>
+            a_tags = div.find_elements(By.TAG_NAME, "a")
 
-                # Check if any <a> tags were found
-                if a_tags:
-                    for a_tag in a_tags:
-                        link = a_tag.get_attribute("href")
-                        parsed_url = urlparse(link)
-                        root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
-                        text = a_tag.text
-                        if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
-                            links.append({"link": link, "name": text})
-                            seen_domains.add(root_domain)  # Mark this domain as seen
-            array.append({"query": query, "links": links[:save_top_x_links]})
+            # Check if any <a> tags were found
+            if a_tags:
+                for a_tag in a_tags:
+                    link = a_tag.get_attribute("href")
+                    parsed_url = urlparse(link)
+                    root_domain = parsed_url.netloc  # Extract the domain (e.g., hm.com, hm.nl)
+                    text = a_tag.text
+                    if link and root_domain not in seen_domains and not any(domain in link for domain in excluded_domains):
+                        links.append({"link": link, "name": text})
+                        seen_domains.add(root_domain)  # Mark this domain as seen
+        array.append({"query": neutral_query, "links": links[:save_top_x_links]})
 
         # save neutral links to json, only single for now
-        save_links_to_json(array, output_dir)
+        save_links_to_json(array, nr_of_participant, nr_of_neutr_query, nr_of_third, output_dir)
             
 
     except NoSuchElementException:
@@ -268,83 +258,111 @@ def clickLink(driver, link):
     except Exception as e:
         print(f"Error occurred while handling link {link['link']}: {e}")
 
-def save_order_to_json(orderlist):
+def save_order_to_json(nr_of_participant, nr_of_neutr_query, nr_of_half, orderlist):
     """
-    Saves links in the json
+    Saves query order in the json
     """
      
     # Directory to save the JSON files
     output_dir = "queries_order_jsons"
     os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
 
-    output_file = os.path.join(output_dir, f"orderlist.json")
+    output_file = os.path.join(output_dir, f"orderlist_p{nr_of_participant}_q{nr_of_neutr_query}_h{nr_of_half}.json")
 
-    # Save the links to the unique JSON file
+    # Save query order to the unique JSON file
     print(orderlist)
     with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(" ".join(list(map(str,orderlist))), f, ensure_ascii=False, indent=4)
+        json.dump({"Participant": nr_of_participant, "Query": nr_of_neutr_query, "order": " ".join(list(map(str,orderlist)))}, f, ensure_ascii=False, indent=4)
 
-def get_order_to_json():
+def get_order_from_json(nr_of_participant_minus_one, nr_of_neutr_query):
     """
-    Saves links in the json
+    Gets query order from the json
     """
-     
-    # Directory to save the JSON files
-    input_dir = "queries_order_jsons"
-    input_file = os.path.join(input_dir, f"orderlist.json")
 
-    # Save the links to the unique JSON file
-    with open('queries.json', 'r') as file:
+    # Read the query order from unique JSON file
+    with open(f'queries_order_jsons/orderlist_p{nr_of_participant_minus_one}_q{nr_of_neutr_query}_h{nr_of_half}.json', 'r') as file:
             data = json.load(file)
-            slices = data.split(" ")
+            print(data)
+            slices = data["order"].split(" ")
             return list(map(int,slices))
 
 def main():
-    queries_temp_right = get_queries('queries_right_wing')
-    order = np.arange(len(queries_temp_right))
-    random.shuffle(order)
-    print(order)
-    save_order_to_json(order)
-    queries = []
-    for i in order:
-        queries.append(queries_temp_right[i])
-    driver = initialize_driver()
-    
-    # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
-    driver.get("https://www.google.com/?hl=en&gl=us")
-    accept_cookies(driver)
-    
-    # Perform searches for each query
-    search_queries(driver, queries)
-    
-    #get neutral queries and save to the json
-    neutral_queries = get_queries('neutral_queries')
-    print(type(neutral_queries), neutral_queries)
-    search_query_news_save_results(driver, neutral_queries, 'neutral_queries_news_jsons')
+    # Loop queries and participants (loop through participants first since their order is paired)
+    for nr_of_neutr_query in range(10):
+        for nr_of_participant in range(2):
 
-    queries_temp_left = get_queries('queries_left_wing_1')
-    order = np.arange(len(queries_temp_left))
-    random.shuffle(order)
-    queries = []
-    for i in order:
-        queries.append(queries_temp_left[i])
-    driver = initialize_driver()
-    
-    # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
-    driver.get("https://www.google.com/?hl=en&gl=us")
-    accept_cookies(driver)
-    
-    # Perform searches for each query
-    search_queries(driver, queries)
-    
-    #get neutral queries and save to the json
-    neutral_queries = get_queries('neutral_queries')
-    print(type(neutral_queries), neutral_queries)
-    print(neutral_queries[0])
-    search_query_save_results(driver, neutral_queries, 'neutral_queries_jsons')
+            driver = initialize_driver()
 
-    # Close the browser
-    driver.quit()
+            # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
+            driver.get("https://www.google.com/?hl=en&gl=us")
+            accept_cookies(driver)
+            
+            # Get neutral queries and save to the json
+            neutral_queries = get_queries('neutral_queries')
+            search_query_news_save_results(driver, neutral_queries[nr_of_neutr_query], nr_of_participant, nr_of_neutr_query, 1, 'neutral_queries_news_jsons')
+
+            # Assign a random order to half of the participants
+            # These participants start with right-winged queries
+            if nr_of_participant % 2 == 0:
+                queries_temp = get_queries('queries_right_wing')
+                order = np.arange(len(queries_temp))
+                random.shuffle(order)
+                print(order)
+                save_order_to_json(nr_of_participant, nr_of_neutr_query, 1, order)
+            # Assign same order as previous participant to half of the participants
+            # These participants start with left-winged queries
+            else:
+                queries_temp = get_queries('queries_left_wing')
+                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query)
+                print(order)
+            queries = []
+            for i in order:
+                queries.append(queries_temp[i])
+
+            driver = initialize_driver()
+            
+            # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
+            driver.get("https://www.google.com/?hl=en&gl=us")
+            accept_cookies(driver)
+            
+            # Perform searches for each query
+            search_queries(driver, queries)
+            
+            #get neutral queries and save to the json
+            neutral_queries = get_queries('neutral_queries')
+            search_query_news_save_results(driver, neutral_queries[nr_of_neutr_query], nr_of_participant, nr_of_neutr_query, 2, 'neutral_queries_news_jsons')
+
+            # Show left-winged queries to unbias right-winged search
+            if nr_of_participant % 2 == 0:
+                queries_temp = get_queries('queries_left_wing')
+                order = np.arange(len(queries_temp))
+                random.shuffle(order)
+                print(order)
+                save_order_to_json(nr_of_participant, nr_of_neutr_query, 2, order)
+            # Show right-winged queries to unbias left-winged search
+            else:
+                queries_temp = get_queries('queries_right_wing')
+                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query)
+                print(order)
+            queries = []
+            for i in order:
+                queries.append(queries_temp[i])
+
+            driver = initialize_driver()
+            
+            # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
+            driver.get("https://www.google.com/?hl=en&gl=us")
+            accept_cookies(driver)
+            
+            # Perform searches for each query
+            search_queries(driver, queries)
+            
+            #get neutral queries and save to the json
+            neutral_queries = get_queries('neutral_queries')
+            search_query_news_save_results(driver, neutral_queries[nr_of_neutr_query], nr_of_participant, nr_of_neutr_query, 3, 'neutral_queries_news_jsons')
+
+            # Close the browser
+            driver.quit()
 
 if __name__ == "__main__":
     main()
