@@ -288,8 +288,10 @@ def get_order_from_json(nr_of_participant_minus_one, nr_of_neutr_query):
 
 def main():
     # Loop queries and participants (loop through participants first since their order is paired)
-    for nr_of_neutr_query in range(10):
+    handled_queries = random.sample(range(10), 3)
+    for nr_of_neutr_query in handled_queries:
         for nr_of_participant in range(2):
+
 
             driver = initialize_driver()
 
