@@ -1,5 +1,5 @@
 {
-  "queries_right_wing": ["Trump", "Leave NATO US", "Pro life US", "loosen gun laws US", "Stop wasting money on climate change US", "America first", "anti lgbtq+", "stricter immigration controls", "Republican Party", "Fox News"],
+  "queries_right_wing": ["Trump", "Leave NATO US", "Pro life US", "loosen gun laws US", "Stop wasting money on climate change US", "Make America great again", "anti lgbtq+", "stricter immigration controls", "Republican Party", "Fox News"],
   "queries_left_wing": ["Harris", "Stay in NATO US", "Pro choice US", "stricter gun laws US", "Invest money in climate change US", "social equality", "pro lgbtq+", "open border immigration", "Democratic Party", "CNN"],
   "neutral_queries": ["Obamacare", "Syria war", "Gun license", "Planned parenthood", "Global warming", "college affordability", "Marriage equality", "Illegal immigrants", "Medicare for all", "Flat tax"]
 }
