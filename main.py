@@ -274,7 +274,7 @@ def save_order_to_json(nr_of_participant, nr_of_neutr_query, nr_of_half, orderli
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump({"Participant": nr_of_participant, "Query": nr_of_neutr_query, "order": " ".join(list(map(str,orderlist)))}, f, ensure_ascii=False, indent=4)
 
-def get_order_from_json(nr_of_participant_minus_one, nr_of_neutr_query):
+def get_order_from_json(nr_of_participant_minus_one, nr_of_neutr_query, nr_of_half):
     """
     Gets query order from the json
     """
@@ -289,9 +289,9 @@ def get_order_from_json(nr_of_participant_minus_one, nr_of_neutr_query):
 def main():
     # Loop queries and participants (loop through participants first since their order is paired)
     handled_queries = random.sample(range(10), 3)
+    print(handled_queries)
     for nr_of_neutr_query in handled_queries:
         for nr_of_participant in range(2):
-
 
             driver = initialize_driver()
 
@@ -315,13 +315,11 @@ def main():
             # These participants start with left-winged queries
             else:
                 queries_temp = get_queries('queries_left_wing')
-                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query)
+                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query, 1)
                 print(order)
             queries = []
             for i in order:
                 queries.append(queries_temp[i])
-
-            driver = initialize_driver()
             
             # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
             driver.get("https://www.google.com/?hl=en&gl=us")
@@ -344,13 +342,11 @@ def main():
             # Show right-winged queries to unbias left-winged search
             else:
                 queries_temp = get_queries('queries_right_wing')
-                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query)
+                order = get_order_from_json(nr_of_participant-1, nr_of_neutr_query, 2)
                 print(order)
             queries = []
             for i in order:
                 queries.append(queries_temp[i])
-
-            driver = initialize_driver()
             
             # Navigate to Google with English settings - hl=en: Sets the language of the Google interface to English. gl=us: Sets the region to the United States as we want english results and be focused on US politics.
             driver.get("https://www.google.com/?hl=en&gl=us")
