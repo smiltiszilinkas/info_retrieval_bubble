@@ -1,0 +1,27 @@
+[
+    {
+        "query": "Syria war",
+        "links": [
+            {
+                "link": "https://www.bbc.com/news/articles/cd75e8gdy9jo",
+                "name": "BBC\nSyria: Which countries have been involved in the war and why?\n2 days ago"
+            },
+            {
+                "link": "https://edition.cnn.com/world/live-news/syria-israel-assad-war-russia-intl-hnk-12-11-24/index.html",
+                "name": "CNN\nDecember 11, 2024: Syria civil war news\n1 day ago"
+            },
+            {
+                "link": "https://www.nytimes.com/interactive/2024/12/06/world/middleeast/syria-war-maps-control.html",
+                "name": "The New York Times\nSee How the War in Syria Has Changed\n1 week ago"
+            },
+            {
+                "link": "https://www.aljazeera.com/news/liveblog/2024/12/13/syria-live-news-un-chief-calls-for-halt-to-israeli-air-strikes-on-syria",
+                "name": "Al Jazeera\nThousands gather in Damascus for first Friday prayers since al-Assad’s fall\nLIVE1 hour ago"
+            },
+            {
+                "link": "https://www.cfr.org/expert-brief/what-role-turkey-playing-syrias-civil-war",
+                "name": "Council on Foreign Relations\nWhat Role Is Turkey Playing in Syria’s Civil War?\n6 days ago"
+            }
+        ]
+    }
+]
